@@ -1,0 +1,139 @@
+---
+title: "Replication Crisis Notebook"
+output: html_notebook
+---
+
+Loading libraries that will be used during this process. 
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(readr)
+library(stringr)
+library(skimr)
+library(splitstackshape)
+```
+
+Loading the csv file
+```{r}
+#loading downloaded csv file
+  ## discarding some of the columns that won't be used
+  ## renaming the column titles so they're not capitalized
+  ## converting lack of information notes in to NA strings
+  ## adding an id to each column
+
+data.original <- read.csv ("scopus.csv", na.strings = c("", "NA"))
+
+data <- data.original %>%
+ select(-DOI, -Link, -Molecular.Sequence.Numbers, -Chemicals.CAS, -Tradenames, -Manufacturers, -Funding.Text.1, -Funding.Text.2, -Funding.Text.3, -Funding.Text.4, -Funding.Text.5, -Funding.Text.6, -Correspondence.Address, -Editors, -Sponsors, -Publisher, -Abbreviated.Source.Title, -Source, -Source.title, -Art..No.)
+
+names(data) <- c("authors", "author.id", "title", "year", "volume", "issue", "page.start", "page.end", "page.count", "cited.by", "affiliations", "author.affiliations", "abstract", "author.keywords", "index.keywords", "funding.details", "references", "conference.name", "conference.date", "conference.location", "conference.code", "issn", "isbn", "coden", "pubmed.id", "original.language", "document.type", "publication.stage", "open.access", "eid")
+
+data <- data %>%
+  mutate(authors = na_if(authors, "[No author name available]")) %>%
+  mutate(author.id = na_if(author.id, "[No author id available]")) %>%
+  mutate(title = na_if(title, "[No title available]")) %>%
+  mutate(year = na_if(year, "[No year available]")) %>%
+  mutate(volume = na_if(year, "[No volume available]")) %>%
+  mutate(issue = na_if(issue, "[No issue available]")) %>%
+  mutate(abstract = na_if(abstract, "[No abstract available]")) %>%
+  mutate(issn = na_if(issn, "[No ISSN available]")) %>%
+  mutate(isbn = na_if(isbn, "[No ISBN available]")) %>%
+  mutate(coden = na_if(coden, "[No CODEN available]"))
+  
+data <- data %>%
+  mutate(id = row_number())
+```
+
+Looking at the information to see what other cleaning needs to be done.
+```{}
+#summarizing the data to observe what is missing
+skim(data)
+
+str(data)
+```
+
+
+```{r}
+#calculating the number of articles by volume/year
+number.volumes <- data %>% count(volume)
+
+#calculating the number of articles by issue
+number.issues <- data %>% count(issue)
+
+#calculating the number or issues by year
+number.issues.by.year <- data %>%
+  group_by(year) %>%
+  count(issue) %>%
+  select(year, issue) %>%
+  count(year)
+
+#renaming the column to be representative of content, number of issues
+names(number.issues.by.year) <- c("year", "number.of.issues")
+```
+
+
+```{r}
+# identifying tiles, abstracts, author keywords and index keywords with my own keywords
+  ## keywords: Replication crisis, replication crisis, Replicability crisis, replicability crisis, Reproducibility crisis, reproducibility crisis
+
+data.title <- data %>%
+  filter(grepl("Replication crisis|replication crisis|Replicability crisis|replicability crisis|Reproducibility crisis|reproducibility crisis", title))
+
+data.abstract <- data %>%
+  filter(grepl("Replication crisis|replication crisis|Replicability crisis|replicability crisis|Reproducibility crisis|reproducibility crisis", title))
+
+data.author.keywords <- data %>%
+  filter(grepl("Replication crisis|replication crisis|Replicability crisis|replicability crisis|Reproducibility crisis|reproducibility crisis", title))
+
+data.index.keywords <- data %>%
+  filter(grepl("Replication crisis|replication crisis|Replicability crisis|replicability crisis|Reproducibility crisis|reproducibility crisis", title))
+
+#putting all of the categories back together 
+data.replication <- do.call("rbind", list(data.title, data.abstract, data.author.keywords, data.index.keywords))
+
+#deleting any articles that might have replicated
+data.replication <- data.replication %>%
+  distinct(id, .keep_all = TRUE)
+```
+
+```{r}
+#splitting author.id, 
+  ##in to separate columns using the splitstackshape library, which doesn't require you to know the total a column needs to be split in
+
+data.replication <- cSplit(data.replication, "author.id", sep=";")
+
+data.replication <-  cSplit(data.replication, "authors", sep=",")
+  
+data.replication <-  cSplit(data.replication, "affiliations", sep=";")
+
+data.replication <- cSplit(data.replication, "index.keywords", sep=";")
+  
+data.replication <- cSplit(data.replication, "references", sep=";")
+
+data.replication <- cSplit(data.replication, "author.keywords", sep=";")
+```
+
+
+```{r}
+# next steps
+  ## doing the data visualizations that i'm interested in
+  ## pin pointing what visualizations i'm interested in making and why i'm choosing those
+  ## randomly selecting 5 different articles to qual-code
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
