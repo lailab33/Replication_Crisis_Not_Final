@@ -15,14 +15,79 @@ library(splitstackshape)
 ```
 
 Loading the csv file
+
 ```{r}
-#loading downloaded csv file
+#loading the csv files and then joining them in to one data base
+  ##converting blanks in to NA
+
+#2010 data bases
+data.10.o <- read.csv ("2010_no_articles.csv", na.strings = c("", "NA"))
+data.10.a <- read.csv ("2010_yes_articles.csv", na.strings = c("", "NA"))
+
+#2011 data bases
+data.11.o <- read.csv ("2011_no_articles.csv", na.strings = c("", "NA"))
+data.11.a <- read.csv ("2011_yes_articles.csv", na.strings = c("", "NA"))
+
+#2012 databases
+data.12.o <- read.csv ("2012_no_articles.csv", na.strings = c("", "NA"))
+data.12.a <- read.csv ("2012_yes_articles.csv", na.strings = c("", "NA"))
+
+#2013 databases
+data.13.o <- read.csv ("2013_no_articles.csv", na.strings = c("", "NA"))
+data.13.a <- read.csv ("2013_articles.csv", na.strings = c("", "NA"))
+
+#2014 databases
+data.14.a <- read.csv ("2014_articles.csv", na.strings = c("", "NA"))
+data.14.o <- read.csv ("2014_other.csv", na.strings = c("", "NA"))
+
+#2015 databases
+data.15.a <- read.csv ("2015_articles.csv", na.strings = c("", "NA"))
+data.15.o <- read.csv ("2015_other.csv", na.strings = c("", "NA"))
+
+#2016 database
+  ## everything fit in one for 2016
+data.16.all <- read.csv ("2016_all.csv", na.strings = c("", "NA"))
+
+#2017 database
+  ## everything fir in one for 2017
+data.17.all <- read.csv ("2017_all.csv", na.strings = c("", "NA"))
+
+#2018 database
+data.18.a <- read.csv ("2018_articles.csv", na.strings = c("", "NA"))
+data.18.o <- read.csv ("2018_other.csv", na.strings = c("", "NA"))
+
+#2019 database
+data.19.a <- read.csv ("2019_articles.csv", na.strings = c("", "NA"))
+data.19.n <- read.csv ("2019_notes.csv", na.strings = c("", "NA"))
+data.19.o <- read.csv ("2019_other.csv", na.strings = c("", "NA"))
+
+#2020 database
+data.20.n <- read.csv ("2020_notes.csv", na.strings = c("", "NA"))
+data.20.o <- read.csv ("2020_other_articles.csv", na.strings = c("", "NA"))
+```
+
+```{r}
+#putting the databases together into one
+bind_rows(data.10.a, data.10.o, 
+          data.11.a, data.11.o, 
+          data.12.a, data.12.o, 
+          data.13.a, data.13.a,
+          data.14.a, data.14.o,
+          data.15.a, data.15.o,
+          data.16.all,
+          data.17.all,
+          data.18.o, data.18.a,
+          data.19.a, data.19.n, data.19.o,
+          data.20.n, data.20.o)
+```
+
+
+```{r}
+#cleaning the csv file
   ## discarding some of the columns that won't be used
   ## renaming the column titles so they're not capitalized
   ## converting lack of information notes in to NA strings
   ## adding an id to each column
-
-data.original <- read.csv ("scopus.csv", na.strings = c("", "NA"))
 
 data <- data.original %>%
  select(-DOI, -Link, -Molecular.Sequence.Numbers, -Chemicals.CAS, -Tradenames, -Manufacturers, -Funding.Text.1, -Funding.Text.2, -Funding.Text.3, -Funding.Text.4, -Funding.Text.5, -Funding.Text.6, -Correspondence.Address, -Editors, -Sponsors, -Publisher, -Abbreviated.Source.Title, -Source, -Source.title, -Art..No.)
@@ -122,13 +187,6 @@ data.replication <- cSplit(data.replication, "author.keywords", sep=";")
   ## randomly selecting 5 different articles to qual-code
 
 ```
-
-
-
-
-
-
-
 
 
 
