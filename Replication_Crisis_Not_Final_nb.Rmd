@@ -68,7 +68,7 @@ data.20.o <- read.csv ("2020_other_articles.csv", na.strings = c("", "NA"))
 
 ```{r}
 #putting the databases together into one
-bind_rows(data.10.a, data.10.o, 
+data.original <- rbind(data.10.a, data.10.o,
           data.11.a, data.11.o, 
           data.12.a, data.12.o, 
           data.13.a, data.13.a,
