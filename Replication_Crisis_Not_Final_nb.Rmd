@@ -12,6 +12,7 @@ library(readr)
 library(stringr)
 library(skimr)
 library(splitstackshape)
+library(janitor)
 ```
 
 Loading the csv file
@@ -82,39 +83,102 @@ data.original <- rbind(data.10.a, data.10.o,
 ```
 
 
-```{r}
+```{r include=FALSE}
 #cleaning the csv file
   ## discarding some of the columns that won't be used
   ## renaming the column titles so they're not capitalized
   ## converting lack of information notes in to NA strings
   ## adding an id to each column
 
+data.original <- data.original %>%
+ select(-Art..No., -Molecular.Sequence.Numbers, -Chemicals.CAS,-Tradenames, -Manufacturers, -Funding.Text.1, -Funding.Text.2, -Funding.Text.3, -Funding.Text.4, -Funding.Text.5, -Funding.Text.6, -Funding.Text.7, -Funding.Text.8, -Funding.Text.9, -Funding.Text.10, -Correspondence.Address,  -Abbreviated.Source.Title)
+```
+
+```{r}
+#renaming the columns for easier handling
+names(data.original) <- c("authors", "author.id", "title", "year", "source.title", "volume", "issue", "page.start", "page.end", "page.count", "cited.by", "doi", "link", "affiliations", "author.affiliations", "abstract", "author.keywords", "index.keywords", "funding.details", "references", "editors", "sponsors", "publisher", "conference.name", "conference.date", "conference.location", "conference.code", "issn", "isbn", "coden", "pubmed.id", "original.language", "document.type", "publication.stage", "open.access", "source", "eid")
+```
+
+```{r}
+#extracting the unique instances
+data.original <- unique(data.original)
+```
+
+```{r}
+#checking how many NAs exist within each column
+colSums(is.na(data.original))
+
+##UPDATE HERE WHAT THE NUMBERS ARE BEFORE I RUN THEM
+  ##RETRACT COLUMNS THAT ARE TOTALLY EMPTY
+
+#all columns (except isbn) are totally empty columns
+  #isbn has one 1 row with data
+data.original <- data.original %>%
+ select(-editors, -sponsors, -conference.name, -conference.date, -conference.location, -conference.code)
+```
+
+```{r}
+#adding a unique id code for all of the columns
 data <- data.original %>%
- select(-DOI, -Link, -Molecular.Sequence.Numbers, -Chemicals.CAS, -Tradenames, -Manufacturers, -Funding.Text.1, -Funding.Text.2, -Funding.Text.3, -Funding.Text.4, -Funding.Text.5, -Funding.Text.6, -Correspondence.Address, -Editors, -Sponsors, -Publisher, -Abbreviated.Source.Title, -Source, -Source.title, -Art..No.)
-
-names(data) <- c("authors", "author.id", "title", "year", "volume", "issue", "page.start", "page.end", "page.count", "cited.by", "affiliations", "author.affiliations", "abstract", "author.keywords", "index.keywords", "funding.details", "references", "conference.name", "conference.date", "conference.location", "conference.code", "issn", "isbn", "coden", "pubmed.id", "original.language", "document.type", "publication.stage", "open.access", "eid")
-
-data <- data %>%
-  mutate(authors = na_if(authors, "[No author name available]")) %>%
-  mutate(author.id = na_if(author.id, "[No author id available]")) %>%
-  mutate(title = na_if(title, "[No title available]")) %>%
-  mutate(year = na_if(year, "[No year available]")) %>%
-  mutate(volume = na_if(year, "[No volume available]")) %>%
-  mutate(issue = na_if(issue, "[No issue available]")) %>%
-  mutate(abstract = na_if(abstract, "[No abstract available]")) %>%
-  mutate(issn = na_if(issn, "[No ISSN available]")) %>%
-  mutate(isbn = na_if(isbn, "[No ISBN available]")) %>%
-  mutate(coden = na_if(coden, "[No CODEN available]"))
-  
-data <- data %>%
   mutate(id = row_number())
 ```
 
-Looking at the information to see what other cleaning needs to be done.
+```{}
+#checking which columns use "[No x available]" format
+  ##to be able to copy that format and replace with NA instead
+
+data %>% filter(grepl("available]", authors))
+#[No author name available]
+
+data %>% filter(grepl("available]", author.id))
+#[No author id available]
+
+#none of these have inserted categories
+data %>% filter(grepl("available]", title))
+data %>% filter(grepl("available]", year))
+data %>% filter(grepl("available]", source.title))
+data %>% filter(grepl("available]", volume))
+data %>% filter(grepl("available]", issue))
+data %>% filter(grepl("available]", page.start))
+data %>% filter(grepl("available]", page.end))
+data %>% filter(grepl("available]", page.count))
+data %>% filter(grepl("available]", cited.by))
+data %>% filter(grepl("available]", doi))
+data %>% filter(grepl("available]", link))
+data %>% filter(grepl("available]", affiliations))
+data %>% filter(grepl("available]", author.affiliations))
+data %>% filter(grepl("available]", abstract))
+#[No abstract available]
+
+data %>% filter(grepl("available]", author.keywords))
+data %>% filter(grepl("available]", index.keywords))
+data %>% filter(grepl("available]", funding.details))
+data %>% filter(grepl("available]", references))
+data %>% filter(grepl("available]", publisher))
+data %>% filter(grepl("available]", issn))
+data %>% filter(grepl("available]", isbn))
+data %>% filter(grepl("available]", coden))
+data %>% filter(grepl("available]", pubmed.id))
+data %>% filter(grepl("available]", original.language))
+data %>% filter(grepl("available]", document.type))
+data %>% filter(grepl("available]", publication.stage))
+data %>% filter(grepl("available]", open.access))
+data %>% filter(grepl("available]", source))
+data %>% filter(grepl("available]", eid))
+```
+
+
+```{r}
+#replacing text about missing data for NA instead in the columns that use text to indicate missing information
+data.original <- data.original %>%
+  mutate(authors = na_if(authors, "[No author name available]")) %>%
+  mutate(author.id = na_if(author.id, "[No author id available]")) %>%
+  mutate(abstract = na_if(abstract, "[No abstract available]"))
+```
+
 ```{}
 #summarizing the data to observe what is missing
 skim(data)
-
 str(data)
 ```
 
@@ -122,9 +186,13 @@ str(data)
 ```{r}
 #calculating the number of articles by volume/year
 number.volumes <- data %>% count(volume)
+#renaming
+names(number.volumes) <- c("volume", "n.items.by.year")
 
 #calculating the number of articles by issue
 number.issues <- data %>% count(issue)
+#renaming
+names(number.issues) <- c("volume", "n.items.by.issue")
 
 #calculating the number or issues by year
 number.issues.by.year <- data %>%
@@ -134,7 +202,7 @@ number.issues.by.year <- data %>%
   count(year)
 
 #renaming the column to be representative of content, number of issues
-names(number.issues.by.year) <- c("year", "number.of.issues")
+names(number.issues.by.year) <- c("year", "n.of.issues")
 ```
 
 
@@ -161,6 +229,7 @@ data.replication <- do.call("rbind", list(data.title, data.abstract, data.author
 data.replication <- data.replication %>%
   distinct(id, .keep_all = TRUE)
 ```
+
 
 ```{r}
 #splitting author.id, 
