@@ -267,6 +267,8 @@ data.networks <- cSplit(data.networks, "references", sep=";")
 data.networks <- cSplit(data.networks, "author.keywords", sep=";")
 ```
 
+Descriptive Data Visualization
+
 ```{r}
 #creating a color theme for the visualizations
 theme_networks <- theme(panel.grid = element_blank(),
@@ -275,12 +277,24 @@ theme_networks <- theme(panel.grid = element_blank(),
 
 ```
 
+```{r}
+#visualizing distribution of the citation counts for ALL articles in scien
+#descriptive visualization
+  ## one: histogram of the citation, bins with 30 counts
+citation.hist.all <- ggplot(data, aes(x=cited.by)) +
+  geom_histogram(fill = "#9999CC", binwidth= 30, center = 0.1) +
+  xlab("Citation counts for all articles in Science") + 
+  ylab("Number of articles")
+
+citation.hist.all + theme_networks
+```
 
 ```{r}
 #descriptive visualization
-  ## one: histogram of the citation, bins with 10 counts
-citation.hist <- ggplot(data.networks, aes(x=cited.by), binwidth(10)) +
-  geom_histogram(fill = "#9999CC") +
+  ## one: histogram of the citation, bins with 30 counts
+citation.hist <- ggplot(data.networks, aes(x=cited.by)) +
+  geom_histogram(fill = "#9999CC", binwidth= 30, center = 0.1) +
+  scale_x_continuous(breaks = c(0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900)) +
   xlab("Citation counts") + 
   ylab("Number of articles")
 
@@ -290,11 +304,14 @@ citation.hist + theme_networks
 
 ```{r}
 #two: visualization of the citation counts excluding outliers (<1000)
+  ## binwidth 10
 data.networks.citation.most <- data.networks %>%
   filter(cited.by < 1000)
 
 citation.hist.most <- ggplot(data.networks.citation.most, aes(x=cited.by), binwidth(10)) +
   geom_histogram(fill = "#9999CC") +
+    scale_x_continuous(breaks = c(10, 50, 100, 150, 200, 250, 300, 350, 400, 
+                                  450, 500, 550, 600, 650, 700, 750, 800)) +
   xlab("Citation counts, without outliers") + 
   ylab("Number of articles")
 
@@ -303,35 +320,6 @@ citation.hist.most + theme_networks
 ```
 
 
-```{r}
-article.year.count.all <- ggplot(number.issues.by.year, aes(x= year, y=n.of.issues)) +
-  geom_col(fill = "#9999CC") +
-  xlab("Year") + 
-  ylab("Number of articles")
-
-article.year.count.all + theme_networks
-```
-
-```{r}
-article.year.networks <- ggplot(data.networks, aes(x=year), binwidth(10)) +
-  geom_histogram(fill = "#9999CC") +
-  xlab("Citation counts") + 
-  ylab("Number of articles")
-
-article.year.networks + theme_networks
-```
-
-```{r}
-#visualizing distribution of the citation counts for ALL articles in scien
-citation.hist <- ggplot(data.networks, aes(x=cited.by), binwidth(10)) +
-  geom_histogram(fill = "#9999CC") +
-  xlab("Citation counts") + 
-  ylab("Number of articles")
-
-citation.hist + theme_networks
-```
-
-```{r}
 number.issues.by.year.networks <- data.networks %>%
   group_by(year) %>%
   count(issue) %>%
@@ -348,6 +336,33 @@ article.year.network <- ggplot(number.issues.by.year.networks, aes(x = year, y =
   ylab("Number of articles")
 
 article.year.network + theme_networks
+
+```{r}
+#tracking the number of articles about neural networks through the issues in science
+
+#things to add: 
+  #lines where intervals of about 5 years go
+  #tick marks on the x axis
+
+issues.by.year.bar <- ggplot(number.issues) +
+  geom_line(aes(x= volume, y = n.items.by.issue)) +
+  scale_y_continuous(breaks = c(0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150)) +
+  
+  xlab("Issue") + 
+  ylab("Number of articles related to neural networks")
+
+issues.by.year.bar + theme_networks
+
+```
+
+```{r}
+article.year.count.all <- ggplot(data.networks) +
+  geom_bar(aes(year), fill = c("#9999CC")) +
+  scale_x_continuous(breaks = c(2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020))+
+  xlab("Year") + 
+  ylab("Number of articles")
+
+article.year.count.all + theme_networks
 ```
 
 ```{r}
