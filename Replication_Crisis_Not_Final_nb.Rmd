@@ -170,16 +170,10 @@ data %>% filter(grepl("available]", eid))
 
 ```{r}
 #replacing text about missing data for NA instead in the columns that use text to indicate missing information
-data.original <- data.original %>%
+data <- data %>%
   mutate(authors = na_if(authors, "[No author name available]")) %>%
   mutate(author.id = na_if(author.id, "[No author id available]")) %>%
   mutate(abstract = na_if(abstract, "[No abstract available]"))
-```
-
-```{}
-#summarizing the data to observe what is missing
-skim(data)
-str(data)
 ```
 
 
@@ -206,7 +200,7 @@ names(number.issues.by.year) <- c("year", "n.of.issues")
 ```
 
 
-```{r}
+```{}
 # identifying tiles, abstracts, author keywords and index keywords with my own keywords
   ## keywords: Replication crisis, replication crisis, Replicability crisis, replicability crisis, Reproducibility crisis, reproducibility crisis
 
@@ -214,13 +208,13 @@ data.title <- data %>%
   filter(grepl("Replication crisis|replication crisis|Replicability crisis|replicability crisis|Reproducibility crisis|reproducibility crisis", title))
 
 data.abstract <- data %>%
-  filter(grepl("Replication crisis|replication crisis|Replicability crisis|replicability crisis|Reproducibility crisis|reproducibility crisis", title))
+  filter(grepl("Replication crisis|replication crisis|Replicability crisis|replicability crisis|Reproducibility crisis|reproducibility crisis", abstract))
 
 data.author.keywords <- data %>%
-  filter(grepl("Replication crisis|replication crisis|Replicability crisis|replicability crisis|Reproducibility crisis|reproducibility crisis", title))
+  filter(grepl("Replication crisis|replication crisis|Replicability crisis|replicability crisis|Reproducibility crisis|reproducibility crisis", author.keywords))
 
 data.index.keywords <- data %>%
-  filter(grepl("Replication crisis|replication crisis|Replicability crisis|replicability crisis|Reproducibility crisis|reproducibility crisis", title))
+  filter(grepl("Replication crisis|replication crisis|Replicability crisis|replicability crisis|Reproducibility crisis|reproducibility crisis", index.keywords))
 
 #putting all of the categories back together 
 data.replication <- do.call("rbind", list(data.title, data.abstract, data.author.keywords, data.index.keywords))
@@ -230,24 +224,162 @@ data.replication <- data.replication %>%
   distinct(id, .keep_all = TRUE)
 ```
 
+```{r}
+# identifying tiles, abstracts, author keywords and index keywords with my own keywords
+  ## keywords: Replication crisis, replication crisis, Replicability crisis, replicability crisis, Reproducibility crisis, reproducibility crisis
+
+data.title <- data %>%
+  filter(grepl("Neural network|Neural networks|artificial neural network|artificial neural networks", title, ignore.case = TRUE))
+
+data.abstract <- data %>%
+  filter(grepl("Neural network|Neural networks|artificial neural network|artificial neural networks", abstract, ignore.case = TRUE))
+
+data.author.keywords <- data %>%
+  filter(grepl("Neural network|Neural networks|artificial neural network|artificial neural networks", author.keywords, ignore.case = TRUE))
+
+data.index.keywords <- data %>%
+  filter(grepl("Neural network|Neural networks|artificial neural network|artificial neural networks", index.keywords, ignore.case = TRUE))
+
+#BINDING WITH THE EXTRA COLUMNS
+#putting all of the categories back together 
+data.networks <- do.call("rbind", list(data.title, data.abstract, data.author.keywords, data.index.keywords))
+
+#deleting any articles that might have replicated
+data.networks <- data.networks %>%
+  distinct(id, .keep_all = TRUE)
+```
+
 
 ```{r}
 #splitting author.id, 
   ##in to separate columns using the splitstackshape library, which doesn't require you to know the total a column needs to be split in
 
-data.replication <- cSplit(data.replication, "author.id", sep=";")
+data.networks <- cSplit(data.networks, "author.id", sep=";")
 
-data.replication <-  cSplit(data.replication, "authors", sep=",")
+data.networks <-  cSplit(data.networks, "authors", sep=",")
   
-data.replication <-  cSplit(data.replication, "affiliations", sep=";")
+data.networks <-  cSplit(data.networks, "affiliations", sep=";")
 
-data.replication <- cSplit(data.replication, "index.keywords", sep=";")
+data.networks <- cSplit(data.networks, "index.keywords", sep=";")
   
-data.replication <- cSplit(data.replication, "references", sep=";")
+data.networks <- cSplit(data.networks, "references", sep=";")
 
-data.replication <- cSplit(data.replication, "author.keywords", sep=";")
+data.networks <- cSplit(data.networks, "author.keywords", sep=";")
 ```
 
+```{r}
+#creating a color theme for the visualizations
+theme_networks <- theme(panel.grid = element_blank(),
+                        panel.background = element_blank(),
+                        panel.border = element_rect(color="black", fill = NA))
+
+```
+
+
+```{r}
+#descriptive visualization
+  ## one: histogram of the citation, bins with 10 counts
+citation.hist <- ggplot(data.networks, aes(x=cited.by), binwidth(10)) +
+  geom_histogram(fill = "#9999CC") +
+  xlab("Citation counts") + 
+  ylab("Number of articles")
+
+citation.hist + theme_networks
+```
+
+
+```{r}
+#two: visualization of the citation counts excluding outliers (<1000)
+data.networks.citation.most <- data.networks %>%
+  filter(cited.by < 1000)
+
+citation.hist.most <- ggplot(data.networks.citation.most, aes(x=cited.by), binwidth(10)) +
+  geom_histogram(fill = "#9999CC") +
+  xlab("Citation counts, without outliers") + 
+  ylab("Number of articles")
+
+citation.hist.most + theme_networks
+  
+```
+
+
+```{r}
+article.year.count.all <- ggplot(number.issues.by.year, aes(x= year, y=n.of.issues)) +
+  geom_col(fill = "#9999CC") +
+  xlab("Year") + 
+  ylab("Number of articles")
+
+article.year.count.all + theme_networks
+```
+
+```{r}
+article.year.networks <- ggplot(data.networks, aes(x=year), binwidth(10)) +
+  geom_histogram(fill = "#9999CC") +
+  xlab("Citation counts") + 
+  ylab("Number of articles")
+
+article.year.networks + theme_networks
+```
+
+```{r}
+#visualizing distribution of the citation counts for ALL articles in scien
+citation.hist <- ggplot(data.networks, aes(x=cited.by), binwidth(10)) +
+  geom_histogram(fill = "#9999CC") +
+  xlab("Citation counts") + 
+  ylab("Number of articles")
+
+citation.hist + theme_networks
+```
+
+```{r}
+number.issues.by.year.networks <- data.networks %>%
+  group_by(year) %>%
+  count(issue) %>%
+  select(year, issue) %>%
+  count(year)
+
+#calculating the number or issues by year
+
+article.year.network <- ggplot(number.issues.by.year.networks, aes(x = year, y = n, fill = year)) +
+  geom_col(fill = "#9999CC") +
+  geom_text(aes(label = n), vjust = -0.5) + 
+  scale_x_discrete(year, , limits)
+  xlab("Year") + 
+  ylab("Number of articles")
+
+article.year.network + theme_networks
+```
+
+```{r}
+
+```
+
+```{r}
+#randomly selecting articles to close read
+  ##note, this will return different articles every time it is run. I've selected the articles that appeared the first time.
+
+#randomly selecting 2 articles from the whole networks database
+sample_n(data.networks, 2)
+  #selected: Neural scene representation and rendering, 2018. Vol 360, issue 6394. doi: 10.1126/science.aar6170
+  #selected: The biochemical basis of microRNA targeting efficacy, 2019. Vol 366. doi: 10.1126/science.aav1741
+
+#randomly selecting 1 article within the top 25% number of citations
+  ## extracting the quantiles of the dataset, upper 75% = 171.5
+quantile(data.networks$cited.by, na.rm=TRUE)
+
+data.networks.top.75per <- data.networks %>%
+  filter(cited.by > 171.5)
+s
+sample_n(data.networks.top.75per,1)
+  #selected: Terrestrial gross carbon dioxide uptake: Global distribution and covariation with climate. doi: 10.1126/science.1184984
+
+#randomly selecting 1 article from 2019 (the year with the most articles published)
+data.networks.2019 <- data.networks %>%
+  filter(year == "2019")
+
+sample_n(data.networks.2019, 1)
+  #selected: Machine learning transforms how microstates are sampled, 2019. Vol 365. Issue 6457. doi: 10.1126/science.aay2568
+```
 
 ```{r}
 # next steps
